@@ -1,0 +1,43 @@
+
+import java.io.File;
+
+import com.sleepycat.db.*;
+
+public class EntryPoint
+{
+	private static EnvironmentConfig envConfig_ = null;
+    private static Environment env_ = null;
+    private static File envHome_ = new File("./cs440_hw2_env");
+
+    public static void main(String[] args){
+    	
+    	createEnv();
+    	System.out.println("hello world");
+    	
+    }
+	private static void createEnv()
+	{
+		try
+	    {
+			envConfig_ = new EnvironmentConfig();
+			envConfig_.setErrorStream(System.err);
+			envConfig_.setErrorPrefix("cs440_hw2");
+			envConfig_.setAllowCreate(true);
+			envConfig_.setInitializeCache(true);
+			envConfig_.setTransactional(false);
+			envConfig_.setPrivate(true);
+			envConfig_.setInitializeLocking(true);
+			envConfig_.setCacheSize(1024 * 1024);
+			env_ = new Environment(envHome_, envConfig_);
+		}
+		catch(DatabaseException e)
+		{
+			System.err.println("createEnv: Database Exception caught " +
+	                    e.toString());
+		}
+		catch(Exception e)
+		{
+			System.err.println("createEnv: " + e.toString());
+		}
+	}
+}

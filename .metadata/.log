@@ -1,0 +1,39 @@
+!SESSION 2013-02-08 19:51:48.086 -----------------------------------------------
+eclipse.buildId=M20100909-0800
+java.version=1.7.0_11
+java.vendor=Oracle Corporation
+BootLoader constants: OS=linux, ARCH=x86_64, WS=gtk, NL=en_US
+Command-line arguments:  -os linux -ws gtk -arch x86_64
+
+!ENTRY org.eclipse.equinox.p2.engine 4 4 2013-02-08 19:51:53.763
+!MESSAGE An error occurred while installing the items
+!SUBENTRY 1 org.eclipse.equinox.p2.engine 4 0 2013-02-08 19:51:53.763
+!MESSAGE session context was:(profile=PlatformProfile, phase=org.eclipse.equinox.internal.p2.engine.phases.Install, operand=null --> [R]org.eclipse.ant.core.source 3.2.200.v20100427, action=org.eclipse.equinox.internal.p2.touchpoint.eclipse.actions.AddSourceBundleAction).
+!SUBENTRY 1 org.eclipse.equinox.p2.touchpoint.eclipse 4 0 2013-02-08 19:51:53.763
+!MESSAGE The artifact file for osgi.bundle,org.eclipse.ant.core.source,3.2.200.v20100427 was not found.
+
+!ENTRY org.eclipse.ltk.ui.refactoring 4 10000 2013-02-08 21:47:05.441
+!MESSAGE Internal Error
+!STACK 1
+org.eclipse.core.internal.resources.ResourceException: Problems encountered while moving resources.
+	at org.eclipse.core.internal.resources.Resource.move(Resource.java:1609)
+	at org.eclipse.ltk.core.refactoring.resource.RenameResourceChange.perform(RenameResourceChange.java:123)
+	at org.eclipse.ltk.core.refactoring.CompositeChange.perform(CompositeChange.java:278)
+	at org.eclipse.ltk.core.refactoring.PerformChangeOperation$1.run(PerformChangeOperation.java:258)
+	at org.eclipse.core.internal.resources.Workspace.run(Workspace.java:1975)
+	at org.eclipse.ltk.core.refactoring.PerformChangeOperation.executeChange(PerformChangeOperation.java:306)
+	at org.eclipse.ltk.internal.ui.refactoring.UIPerformChangeOperation.executeChange(UIPerformChangeOperation.java:92)
+	at org.eclipse.ltk.core.refactoring.PerformChangeOperation.run(PerformChangeOperation.java:218)
+	at org.eclipse.core.internal.resources.Workspace.run(Workspace.java:1975)
+	at org.eclipse.ltk.internal.ui.refactoring.WorkbenchRunnableAdapter.run(WorkbenchRunnableAdapter.java:87)
+	at org.eclipse.jface.operation.ModalContext$ModalContextThread.run(ModalContext.java:121)
+Contains: File already exists on disk: /nfs/stak/students/m/mcconnjo/cs440/Homework2/resource.
+!SUBENTRY 1 org.eclipse.core.resources 4 4 2013-02-08 21:47:05.443
+!MESSAGE Problems encountered while moving resources.
+!SUBENTRY 2 org.eclipse.core.filesystem 4 268 2013-02-08 21:47:05.443
+!MESSAGE File already exists on disk: /nfs/stak/students/m/mcconnjo/cs440/Homework2/resource.
+
+!ENTRY org.eclipse.core.resources 4 4 2013-02-08 21:47:05.455
+!MESSAGE Problems encountered while moving resources.
+!SUBENTRY 1 org.eclipse.core.filesystem 4 268 2013-02-08 21:47:05.455
+!MESSAGE File already exists on disk: /nfs/stak/students/m/mcconnjo/cs440/Homework2/resource.

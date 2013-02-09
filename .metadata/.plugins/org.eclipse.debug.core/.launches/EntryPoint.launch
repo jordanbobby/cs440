@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/Homework2/src/EntryPoint.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<mapAttribute key="org.eclipse.debug.core.environmentVariables">
+<mapEntry key="LD_LIBRARY_PATH" value="/usr/local/apps/berkeleydb/berkeleydb.5.3/lib"/>
+</mapAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="EntryPoint"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="Homework2"/>
+</launchConfiguration>
