@@ -4,6 +4,7 @@ import java.util.*;
 import com.sleepycat.bind.serial.ClassCatalog;
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.bind.serial.TupleSerialKeyCreator;
+import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.tuple.*;
 import com.sleepycat.db.*;
 import com.sleepycat.bind.EntryBinding;
@@ -14,20 +15,31 @@ public class EntryPoint
 {
 	private static EnvironmentConfig envConfig_ = null;
     private static Environment env_ = null;
-    private static File envHome_ = new File("./cs440_hw2_env");
+    //private static File envHome_ = new File("./cs440_hw2_env");
+    private static String strEnvPath = "./";
+    // DatabaseEntries used for loading records
+    private static DatabaseEntry theKey = new DatabaseEntry();
+    private static DatabaseEntry theData = new DatabaseEntry();
+    //The file to locate if for task # 1
+    private static String locateFile = "561004.xml";
+    
+    // Encapsulates the databases.
+    private static MyDbs myDbs = new MyDbs();
+    
+    // Usage Message
+    private static void usage() {
+        System.out.println("EntryPoint [-t <task number>]");
+        System.out.println("           [-h <database home>]");
+        System.out.println("           [-i <imdb input directory>]");
+        System.exit(-1);
+    }
     
     //private static DatabaseConfig dbConfig_ = null;
-    private static Database imdbDataDb_ = null;
-    
-    /*
-    // Hard coded data for now
-    static Random rand = new Random();
-    private static ImdbData file1 = new ImdbData(new Long(rand.nextLong()), "name1", 10, "hola");
-    private static ImdbData file2 = new ImdbData(new Long(rand.nextLong()), "name2", 10, "mundo");
-    private static ImdbData file3 = new ImdbData(new Long(rand.nextLong()), "name3", 10, "hello");
-    */
+    //private static Database imdbDataDb_ = null;
     
     public static void main (String []args) throws Exception{
+    	//Enable when finished, or maybe add a new function to parse args
+    	/*
     	
     	int taskArg = 0;
     	if (args.length > 0) {
@@ -42,24 +54,29 @@ public class EntryPoint
     		System.err.println("Need an argument");
     		System.exit(1);
     	}
-    	
-    	taskArg = 1; // for debugging only
+    	*/
+    	int taskArg = 2; // for debugging only, this value will come from args
         switch (taskArg) {
         	//1- [20 points] Inserting the information about all files in the data set into a Berkeley DB table.
             case 1:
-            	createEnv();
-            	createDbHandle(DatabaseType.HASH, true);	
+            	//createEnv();
+            	//createDbHandle(DatabaseType.HASH);
+            	strEnvPath = "./cs440_hw2_env"; // for debugging only, disable when finished
+            	myDbs.setup(strEnvPath);
             	insertEntries();
-            	retrieveEntries();
+            	//retrieveEntries();
             	break;
                      
             //2- [10 points] Answering point queries for the file name over the table. 
             //For example, finding a file whose name is “282441.xml”. 
             case 2:
             	System.out.println("Query1: Answering point queries for the file name over the table.");
-            	createEnv();
-            	createDbHandle(DatabaseType.HASH, false);
-            	queryFileName();
+            	strEnvPath = "./cs440_hw2_env"; // for debugging only, disable when finished
+            	myDbs.setup(strEnvPath);
+            	searchEntry();
+            	//createEnv();
+            	//createDbHandle(DatabaseType.HASH);
+            	//queryFileName();
             	break;
                      
             //3- [15 points] Answering range queries over file name. 
@@ -94,12 +111,13 @@ public class EntryPoint
             	System.out.println("Query1: Finding all files whose contents contain an input string value. ");
                 break;
         }
-        imdbDataDb_.close();
-        env_.close();
+        //imdbDataDb_.close();
+        //env_.close();
+        myDbs.close();
         System.out.println("Done");
     }
     
-    
+    /*
 	private static void createEnv() throws Exception
 	{
 		System.out.println("Creating Enviroment...");
@@ -129,7 +147,7 @@ public class EntryPoint
 		}
 	}
 	
-	private static void createDbHandle(DatabaseType type, Boolean AllowCreate) throws Exception
+	private static void createDbHandle(DatabaseType type) throws Exception
     {
 		System.out.println("Creating Db handle...");
         try
@@ -157,13 +175,104 @@ public class EntryPoint
             throw e;
         }
     }
+    */
 	private static void insertEntries() throws Exception 
 	{
 		System.out.println("Inserting Entries...");
 		//EntryBinding binding = null;
-		ImdbDataTupleBinding binding = new ImdbDataTupleBinding();
-		addImdbDataEntries(binding);
+		// Now load the data into the database. The item's fileName is the
+        // key, and the data is an ImdbData class object.
+
+        // Need a tuple binding for the Inventory class.
+        TupleBinding imdbBinding = new ImdbDataTupleBinding();
+		//ImdbDataTupleBinding binding = new ImdbDataTupleBinding();
+		addImdbDataEntries(imdbBinding);
 		
+	}
+	private static void searchEntry() throws Exception 
+	{
+		System.out.println("Searching for file " + locateFile + "...");
+		TupleBinding imdbBinding = new ImdbDataTupleBinding();
+		if (locateFile != null) {
+            showFile(imdbBinding);
+        } else {
+            showAllFiles(imdbBinding);
+        }
+	}
+	private static void showFile(TupleBinding binding) throws DatabaseException 
+	{
+        SecondaryCursor secCursor = null;
+        try {
+            // searchKey is the key that we want to find in the
+            // secondary db.
+            DatabaseEntry searchKey =
+                new DatabaseEntry(locateFile.getBytes("UTF-8"));
+
+            // foundKey and foundData are populated from the primary
+            // entry that is associated with the secondary db key.
+            DatabaseEntry foundKey = new DatabaseEntry();
+            DatabaseEntry foundData = new DatabaseEntry();
+
+            // open a secondary cursor
+            secCursor =
+                myDbs.getNameIndexDB().openSecondaryCursor(null, null);
+
+            // Search for the secondary database entry.
+            OperationStatus retVal =
+                secCursor.getSearchKey(searchKey, foundKey,
+                    foundData, LockMode.DEFAULT);
+
+            // Display the entry, if one is found. Repeat until no more
+            // secondary duplicate entries are found
+            while(retVal == OperationStatus.SUCCESS) {
+            	ImdbData imdbRecord = (ImdbData)binding.entryToObject(foundData);
+                //Inventory theInventory =
+                //    (Inventory)inventoryBinding.entryToObject(foundData);
+                displayImdbRecord(foundKey, imdbRecord);
+                retVal = secCursor.getNextDup(searchKey, foundKey,
+                    foundData, LockMode.DEFAULT);
+            }
+        } catch (Exception e) {
+            System.err.println("Error on inventory secondary cursor:");
+            System.err.println(e.toString());
+            e.printStackTrace();
+        } finally {
+            if (secCursor != null) {
+                secCursor.close();
+            }
+        }
+    }
+	private static void displayImdbRecord(DatabaseEntry theKey,
+            ImdbData imdbRecord) throws DatabaseException {
+		String fileName = new String(theKey.getData());
+        System.out.println(fileName + "(" + imdbRecord.getFileSize() + ")");
+        System.out.println("Content:\n");
+        System.out.println(imdbRecord.getContent());
+        System.out.println("\n");
+	}
+	private static void showAllFiles(TupleBinding binding) throws DatabaseException {
+	    // Get a cursor
+	    //Cursor cursor = myDbs.getInventoryDB().openCursor(null, null);
+		Cursor cursor = myDbs.getImdbDataDB().openCursor(null, null);
+	
+	    // DatabaseEntry objects used for reading records
+	    DatabaseEntry foundKey = new DatabaseEntry();
+	    DatabaseEntry foundData = new DatabaseEntry();
+	
+	    try { // always want to make sure the cursor gets closed
+	        while (cursor.getNext(foundKey, foundData,
+	                    LockMode.DEFAULT) == OperationStatus.SUCCESS) {
+	        	ImdbData imdbRecord =
+	                (ImdbData)binding.entryToObject(foundData);
+	        	displayImdbRecord(foundKey, imdbRecord);
+	        }
+	    } catch (Exception e) {
+	        System.err.println("Error on inventory cursor:");
+	        System.err.println(e.toString());
+	        e.printStackTrace();
+	    } finally {
+	        cursor.close();
+	    }
 	}
 	private static void queryFileName() throws Exception
 	{
@@ -186,7 +295,7 @@ public class EntryPoint
 		}
 		*/
 		
-		
+		/*
 		//new database
 		SecondaryConfig sIndexConfig = new SecondaryConfig();
 		sIndexConfig.setType(DatabaseType.HASH);
@@ -210,7 +319,7 @@ public class EntryPoint
 				value, 
 				LockMode.DEFAULT); 
 		System.out.println(retVal);
-		
+		*/
 	}
 	private static void retrieveEntries() throws Exception
 	{
@@ -225,7 +334,7 @@ public class EntryPoint
         {
             
             ImdbData imdb = new ImdbData();
-            cursor = imdbDataDb_.openCursor(null, null);
+            //cursor = imdbDataDb_.openCursor(null, null);
             while(cursor.getNext(key, data, null)
                     == OperationStatus.SUCCESS)
             {
@@ -247,75 +356,37 @@ public class EntryPoint
         }
 	}
 	
-	private static void addImdbDataEntries(ImdbDataTupleBinding binding) throws Exception 
-	{
-		//Transaction txn = null;
-        try
-        {
-            //txn = env_.beginTransaction(null, null);
-            DatabaseEntry key = new DatabaseEntry();
-            DatabaseEntry data = new DatabaseEntry();
-            
-            /*
-            LongBinding.longToEntry(file1.getFileKey(), key);
-            binding.objectToEntry(file1, data);
-            imdbDataDb_.put(null, key, data);
-            
-            LongBinding.longToEntry(file2.getFileKey(), key);
-            binding.objectToEntry(file2, data);
-            imdbDataDb_.put(null, key, data);
-            
-            LongBinding.longToEntry(file3.getFileKey(), key);
-            binding.objectToEntry(file3, data);
-            imdbDataDb_.put(null, key, data);
-            */
-            
-            
-        	File currentDir = new File("./imdb");
-        	scanFiles(currentDir, binding, key, data);
-        	
-            
-            //txn.commit();
+	private static void addImdbDataEntries(TupleBinding binding) throws Exception 
+	{   
+        try {
+        	File currentDir = new File("./imdb"); // debugging only, it will come from args later
+        	scanFiles(currentDir, binding);
         }
         catch (DatabaseException e)
         {
-            //txn.abort();
             System.err.println("addPersonEntries: " + e.toString());
             throw e;
         }
 	}
-	/*
-	static Random rand = new Random();
-    private static ImdbData file1 = new ImdbData(new Long(rand.nextLong()), "name1", 10, "hola");
-    private static ImdbData file2 = new ImdbData(new Long(rand.nextLong()), "name2", 10, "mundo");
-    private static ImdbData file3 = new ImdbData(new Long(rand.nextLong()), "name3", 10, "yeah");
-	 */
-	
 	
 	private static void scanFiles(File dir, 
-			ImdbDataTupleBinding binding, 
-			DatabaseEntry key, 
-			DatabaseEntry data) throws DatabaseException
+			TupleBinding binding) throws DatabaseException
     {
     	try {
 			File[] files = dir.listFiles();
 			for (File file : files) {
 				if (file.isDirectory()) {
 					System.out.println("scanning directory:" + file.getCanonicalPath());
-					scanFiles(file, binding, key, data);
+					scanFiles(file, binding);
 				} else {
-					//System.out.println("     file:" + file.getCanonicalPath());
-					Random rand = new Random();
 					StringBuilder fileContent = getFileContent(file);
-					
-					ImdbData imdbRecord = new ImdbData(new Long(rand.nextLong()), 
-							file.getName(), 
-							(int)file.length(), 
-							fileContent.toString());
-					
-					LongBinding.longToEntry(imdbRecord.getFileKey(), key);
-		            binding.objectToEntry(imdbRecord, data);
-		            imdbDataDb_.put(null, key, data);
+					theKey = new DatabaseEntry(file.getName().getBytes("UTF-8"));
+					ImdbData imdbRecord = new ImdbData();
+					imdbRecord.setFileName(file.getName());
+					imdbRecord.setFileSize((int)file.length());
+					imdbRecord.setContent(fileContent.toString());
+					binding.objectToEntry(imdbRecord, theData);
+					myDbs.getImdbDataDB().put(null, theKey, theData);
 				}
 			}
 		} catch (IOException e) {
@@ -341,6 +412,7 @@ public class EntryPoint
         return content;
 	}
 }
+/*
 class sKeyCreator implements SecondaryKeyCreator {
 	  public boolean createSecondaryKey (SecondaryDatabase  secDb, DatabaseEntry keyEntry, DatabaseEntry dataEntry, DatabaseEntry resultEntry)
 	  {
@@ -349,3 +421,4 @@ class sKeyCreator implements SecondaryKeyCreator {
 		  return true;
 	  }
 }
+*/
