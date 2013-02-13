@@ -15,86 +15,128 @@ public class EntryPoint
 {
 	private static EnvironmentConfig envConfig_ = null;
     private static Environment env_ = null;
-    //private static File envHome_ = new File("./cs440_hw2_env");
     private static String strEnvPath = "./";
     // DatabaseEntries used for loading records
     private static DatabaseEntry theKey = new DatabaseEntry();
     private static DatabaseEntry theData = new DatabaseEntry();
+    
     //The file to locate if for task # 1
-    private static String locateFile = "561004.xml";
     
     // Encapsulates the databases.
     private static MyDbs myDbs = new MyDbs();
     
     // Usage Message
-    private static void usage() {
-        System.out.println("EntryPoint [-t <task number>]");
-        System.out.println("           [-h <database home>]");
-        System.out.println("           [-i <imdb input directory>]");
+    private static void usage(String commandName, int task) {
+        switch (task){
+        case 0:
+        		System.out.println(commandName + " 1-7 arg1 arg2 arg3 arg4");
+        		break;
+        case 1:
+        		System.out.println(commandName + " 1");
+        		break;
+        case 2:
+        		System.out.println(commandName + " 2 XXXX.xml");
+        		break;
+        
+        case 3:
+        		System.out.println(commandName + " 3 XXXX.xml XXXX.xml");
+        		break;
+        case 4:
+        		System.out.println(commandName + " 4 ##");
+        		break;
+        
+        case 5:
+        		System.out.println(commandName + " 5 #### ####");
+        		break;
+        case 6:
+        		System.out.println(commandName + " 6 XXXX.xml XXXX.xml #### ####");
+        		break;
+        case 7:
+        		System.out.println(commandName + " 7 keyword");
+        }
+        
         System.exit(-1);
     }
     
-    //private static DatabaseConfig dbConfig_ = null;
-    //private static Database imdbDataDb_ = null;
-    
     public static void main (String []args) throws Exception{
     	//Enable when finished, or maybe add a new function to parse args
-    	/*
+    	String argumentKey;
+    	String lowerKey;
+    	String upperKey;
+    	String contentString;
+    	String programFileName = "EntryPoint";
+    	int fileSize;
+    	int lowerFileSize;
+    	int upperFileSize;
     	
-    	int taskArg = 0;
-    	if (args.length > 0) {
-    	    try {
-    	        taskArg = Integer.parseInt(args[0]);
-    	        
-    	    } catch (NumberFormatException e) {
-    	        System.err.println("First Argument must be an integer");
-    	        System.exit(1);
-    	    }
-    	} else {
-    		System.err.println("Need an argument");
-    		System.exit(1);
+    	if(args.length < 1){
+    		//exit
+    		usage(programFileName, 0);
     	}
-    	*/
-    	int taskArg = 2; // for debugging only, this value will come from args
+    	
+    	int taskArg = Integer.parseInt(args[0]);
+    	
         switch (taskArg) {
         	//1- [20 points] Inserting the information about all files in the data set into a Berkeley DB table.
             case 1:
-            	//createEnv();
-            	//createDbHandle(DatabaseType.HASH);
-            	strEnvPath = "./cs440_hw2_env"; // for debugging only, disable when finished
+            	//strEnvPath = "./cs440_hw2_env"; // for debugging only, disable when finished
+            	//@todo, if folder doesn't exist, create it.
+            	
+            	strEnvPath = "/scratch/cs440g1"; // for debugging only, disable when finished
             	myDbs.setup(strEnvPath);
             	insertEntries();
-            	//retrieveEntries();
             	break;
                      
             //2- [10 points] Answering point queries for the file name over the table. 
             //For example, finding a file whose name is “282441.xml”. 
             case 2:
+            	if(args.length != 2){
+            		usage(programFileName, 2);
+            	}
+            	argumentKey = args[1];
             	System.out.println("Query1: Answering point queries for the file name over the table.");
-            	strEnvPath = "./cs440_hw2_env"; // for debugging only, disable when finished
+            	strEnvPath = "/scratch/cs440g1"; // for debugging only, disable when finished
             	myDbs.setup(strEnvPath);
-            	searchEntry();
-            	//createEnv();
-            	//createDbHandle(DatabaseType.HASH);
-            	//queryFileName();
+            	searchFileName(argumentKey);
             	break;
                      
             //3- [15 points] Answering range queries over file name. 
             //For example, finding all files whose names are from “20000.xml” to “30000.xml”.
             case 3:
+            	if(args.length != 3){
+            		usage(programFileName, 3);
+            	}
+            	lowerKey = args[1];
+            	upperKey = args[2];
             	System.out.println("Query2: Answering range queries over file name.");
-            	
+            	strEnvPath = "/scratch/cs440g1"; // for debugging only, disable when finished
+            	myDbs.setup(strEnvPath);
+            	searchFileNameRange(lowerKey, upperKey);
             	break;
                      
             //4- [10 points] Answering point queries over file size. 
             //For example, finding all files with size equal to 2000.
             case 4:
+            	if(args.length != 2){
+            		usage(programFileName, 4);
+            	}
+            	fileSize = Integer.parseInt(args[1]);
+            	/*
             	System.out.println("Query3: Answering point queries over file size. ");
+            	strEnvPath = "./cs440_hw2_env"; // for debugging only, disable when finished
+            	myDbs.setup(strEnvPath);
+            	searchFileSize(fileSize);
+            	*/
                 break;
                      
             //5- [15 points] Answering range queries over file size. 
             //For example, finding all files whose sizes are from 2000 to 3000. 
             case 5:
+            	if(args.length != 3){
+            		usage(programFileName, 5);
+            	}
+            	lowerFileSize = Integer.parseInt(args[1]);
+            	upperFileSize = Integer.parseInt(args[2]);
             	System.out.println("Query4: Answering range queries over file size. ");
                 break;
                      
@@ -102,14 +144,28 @@ public class EntryPoint
             //For example, finding all files whose names are from “20000.xml” to “30000.xml”
             //and their sizes range from 2000 to 3000. 
             case 6:
+            	if(args.length != 5){
+            		usage(programFileName, 6);
+            	}
+            	lowerKey = args[1];
+            	upperKey = args[2];
+            	lowerFileSize = Integer.parseInt(args[3]);
+            	upperFileSize = Integer.parseInt(args[4]);
             	System.out.println("Query1: Answering range queries over both file name and file size.");
                 break;
                      
             //7- [10 points] Finding all files whose contents contain an input string value. 
             //For example, finding all files that contain a specific string such as “Arnold”.
             case 7:
+            	if(args.length != 2){
+            		usage(programFileName, 7);
+            	}
+            	contentString = args[1];
+            	
             	System.out.println("Query1: Finding all files whose contents contain an input string value. ");
                 break;
+            default:
+            	usage(programFileName, 0);
         }
         //imdbDataDb_.close();
         //env_.close();
@@ -117,65 +173,6 @@ public class EntryPoint
         System.out.println("Done");
     }
     
-    /*
-	private static void createEnv() throws Exception
-	{
-		System.out.println("Creating Enviroment...");
-		try
-	    {
-			envConfig_ = new EnvironmentConfig();
-			envConfig_.setErrorStream(System.err);
-			envConfig_.setErrorPrefix("cs440_hw2");
-			envConfig_.setAllowCreate(true);
-			envConfig_.setInitializeCache(true);
-			envConfig_.setTransactional(false);
-			envConfig_.setPrivate(true);
-			envConfig_.setInitializeLocking(false);
-			envConfig_.setCacheSize(1024 * 1024);
-			env_ = new Environment(envHome_, envConfig_);
-		}
-		catch(DatabaseException e)
-		{
-			System.err.println("createEnv: Database Exception caught " +
-	                    e.toString());
-			throw e;
-		}
-		catch(Exception e)
-		{
-			System.err.println("createEnv: " + e.toString());
-			throw e;
-		}
-	}
-	
-	private static void createDbHandle(DatabaseType type) throws Exception
-    {
-		System.out.println("Creating Db handle...");
-        try
-        {
-        	DatabaseConfig dbConfig_ = new DatabaseConfig();
-            dbConfig_.setErrorStream(System.err);
-            dbConfig_.setType(type);
-            dbConfig_.setCacheSize(4 * 1024 * 1024);
-            dbConfig_.setAllowCreate(true);
-            dbConfig_.setTransactional(false);
-            dbConfig_.setErrorPrefix("cs440:ImdbDb");
-            imdbDataDb_ = env_.openDatabase(null, "ImdbFile_Db",
-                    "imdb", dbConfig_);
-        }
-        catch(DatabaseException e)
-        {
-            System.err.println(
-                    "createDbHandle: Database Exception caught " +
-                    e.toString());
-            throw e;
-        }
-        catch(Exception e)
-        {
-            System.err.println("createDbHandle: " + e.toString());
-            throw e;
-        }
-    }
-    */
 	private static void insertEntries() throws Exception 
 	{
 		System.out.println("Inserting Entries...");
@@ -189,17 +186,76 @@ public class EntryPoint
 		addImdbDataEntries(imdbBinding);
 		
 	}
-	private static void searchEntry() throws Exception 
+	private static void searchFileName(String locateFile) throws Exception 
 	{
 		System.out.println("Searching for file " + locateFile + "...");
 		TupleBinding imdbBinding = new ImdbDataTupleBinding();
 		if (locateFile != null) {
-            showFile(imdbBinding);
+            showFile(imdbBinding, locateFile);
         } else {
             showAllFiles(imdbBinding);
         }
 	}
-	private static void showFile(TupleBinding binding) throws DatabaseException 
+	private static void searchFileNameRange(String lowerKey, String upperKey) throws Exception{
+		
+		System.out.println("Searching for files between " + lowerKey + " and " + upperKey);
+		TupleBinding imdbBinding = new ImdbDataTupleBinding();
+		showFileRange(imdbBinding, lowerKey, upperKey);
+	}
+	/*
+	private static void searchFileSize(Integer locateFileSize) throws Exception
+	{
+		System.out.println("Searching for files with size " + locateFileSize + "...");
+		TupleBinding imdbBinding = new ImdbDataTupleBinding();
+		SecondaryCursor secCursor = null;
+		
+        try {
+            // searchKey is the key that we want to find in the
+            // secondary db.
+            DatabaseEntry searchKey =
+                new DatabaseEntry(locateFileSize.toString().getBytes("UTF-8"));
+
+            // foundKey and foundData are populated from the primary
+            // entry that is associated with the secondary db key.
+            DatabaseEntry foundKey = new DatabaseEntry();
+            DatabaseEntry foundData = new DatabaseEntry();
+
+            // open a secondary cursor
+            //secCursor =
+            //    myDbs.getNameIndexDB().openSecondaryCursor(null, null);
+
+           secCursor =
+               myDbs.getSizeIndexDB().openSecondaryCursor(null, null);
+
+            
+            // Search for the secondary database entry.
+            OperationStatus retVal =
+                secCursor.getSearchKey(searchKey, foundKey,
+                    foundData, LockMode.DEFAULT);
+
+            // Display the entry, if one is found. Repeat until no more
+            // secondary duplicate entries are found
+            while(retVal == OperationStatus.SUCCESS) {
+            	ImdbData imdbRecord = (ImdbData)imdbBinding.entryToObject(foundData);
+                //Inventory theInventory =
+                //    (Inventory)inventoryBinding.entryToObject(foundData);
+                displayImdbRecord(foundKey, imdbRecord);
+                retVal = secCursor.getNextDup(searchKey, foundKey,
+                    foundData, LockMode.DEFAULT);
+            }
+        } catch (Exception e) {
+            System.err.println("Error on inventory secondary cursor:");
+            System.err.println(e.toString());
+            e.printStackTrace();
+        } finally {
+            if (secCursor != null) {
+                secCursor.close();
+            }
+        }
+		
+	}
+	*/
+	private static void showFile(TupleBinding binding, String locateFile) throws DatabaseException 
 	{
         SecondaryCursor secCursor = null;
         try {
@@ -242,10 +298,61 @@ public class EntryPoint
             }
         }
     }
+	private static void showFileRange(TupleBinding binding, String lowerKey, String upperKey) throws DatabaseException{
+		
+		Cursor cursor = null;
+		List<ImdbData> dataList = new ArrayList<ImdbData>();
+		
+        try {
+            // searchKey is the key that we want to find in the
+            // secondary db.
+            DatabaseEntry searchKey =
+                new DatabaseEntry(lowerKey.getBytes("UTF-8"));
+
+            // foundKey and foundData are populated from the primary
+            // entry that is associated with the secondary db key.
+            DatabaseEntry foundKey = new DatabaseEntry();
+            DatabaseEntry foundData = new DatabaseEntry();
+            DatabaseEntry secondaryKey = new DatabaseEntry();
+
+            // open a secondary cursor
+            cursor =
+                myDbs.getNameIndexDB().openCursor(null, null);
+
+            // Search for the secondary database entry.
+            OperationStatus retVal = cursor.getSearchKey(searchKey,
+                    foundData, LockMode.DEFAULT);
+            // Display the entry, if one is found. Repeat until no more
+            // secondary duplicate entries are found
+            while(retVal == OperationStatus.SUCCESS) {
+            	ImdbData imdbRecord = (ImdbData)binding.entryToObject(foundData);
+                //Inventory theInventory =
+                //    (Inventory)inventoryBinding.entryToObject(foundData);
+                displayImdbRecord(searchKey, imdbRecord);
+                //retVal = secCursor.getNextDup(searchKey, foundKey,
+                //    foundData, LockMode.DEFAULT);
+                if(foundKey.equals(upperKey)){
+                	break;
+                }
+                else{
+                	retVal = cursor.getNextDup(searchKey, foundData, LockMode.DEFAULT);
+                	System.out.println( retVal );
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error on inventory secondary cursor:");
+            System.err.println(e.toString());
+            e.printStackTrace();
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+	}
 	private static void displayImdbRecord(DatabaseEntry theKey,
             ImdbData imdbRecord) throws DatabaseException {
-		String fileName = new String(theKey.getData());
-        System.out.println(fileName + "(" + imdbRecord.getFileSize() + ")");
+		//String fileName = new String(theKey.getData());
+        System.out.println(imdbRecord.getFileName() + "(" + imdbRecord.getFileSize() + ")");
         System.out.println("Content:\n");
         System.out.println(imdbRecord.getContent());
         System.out.println("\n");
@@ -359,7 +466,8 @@ public class EntryPoint
 	private static void addImdbDataEntries(TupleBinding binding) throws Exception 
 	{   
         try {
-        	File currentDir = new File("./imdb"); // debugging only, it will come from args later
+        	//File currentDir = new File("./imdb"); // debugging only, it will come from args later
+        	File currentDir = new File("/scratch/cs440/imdb"); // debugging only, it will come from args later
         	scanFiles(currentDir, binding);
         }
         catch (DatabaseException e)
@@ -387,6 +495,7 @@ public class EntryPoint
 					imdbRecord.setContent(fileContent.toString());
 					binding.objectToEntry(imdbRecord, theData);
 					myDbs.getImdbDataDB().put(null, theKey, theData);
+					
 				}
 			}
 		} catch (IOException e) {
@@ -394,6 +503,8 @@ public class EntryPoint
 		} catch (DatabaseException e) {
             System.err.println("scanFiles: " + e.toString());
             throw e;
+        } finally {
+        	
         }
     }
     
@@ -406,6 +517,7 @@ public class EntryPoint
                 String line = scanner.nextLine();
                 content.append(line);
             }
+            scanner.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
