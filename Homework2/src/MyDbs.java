@@ -25,21 +25,22 @@ import com.sleepycat.db.SecondaryDatabase;
 public class MyDbs {
 
     // The databases that our application uses
-    //private Database vendorDb = null;
-    //private Database inventoryDb = null;
+
+	
 	private Database imdbDataDb = null;
     
     private Database classCatalogDb = null;
     private SecondaryDatabase itemNameIndexDb = null;
+    
 
-    //private String vendordb = "VendorDB.db";
-    //private String inventorydb = "InventoryDB.db";
     private String imdbdatadb = "ImdbDataDB.db";
     private String classcatalogdb = "ClassCatalogDB.db";
     private String itemnameindexdb = "ItemNameIndexDB.db";
+    
+    private SecondaryDatabase itemSizeIndexDb = null;
+    private String itemsizeindexdb = "ItemSizeIndexDB.db";
+    
 
-    // Needed for object serialization
-    private StoredClassCatalog classCatalog;
 
     // Our constructor does nothing
     public MyDbs() {}
@@ -50,16 +51,19 @@ public class MyDbs {
         throws DatabaseException {
 
         DatabaseConfig myDbConfig = new DatabaseConfig();
-        SecondaryConfig mySecConfig = new SecondaryConfig();
-
+        SecondaryConfig mySecConfigSize = new SecondaryConfig();
+        
         myDbConfig.setErrorStream(System.err);
-        mySecConfig.setErrorStream(System.err);
+        mySecConfigSize.setErrorStream(System.err);
+        
         myDbConfig.setErrorPrefix("MyDbs");
-        mySecConfig.setErrorPrefix("MyDbs");
+        mySecConfigSize.setErrorPrefix("MyDbs");
+        
         myDbConfig.setType(DatabaseType.BTREE);
-        mySecConfig.setType(DatabaseType.BTREE);
+        mySecConfigSize.setType(DatabaseType.BTREE);
+        
         myDbConfig.setAllowCreate(true);
-        mySecConfig.setAllowCreate(true);
+        mySecConfigSize.setAllowCreate(true);
 
         // Now open, or create and open, our databases
         // Open the vendors and inventory databases
@@ -69,36 +73,15 @@ public class MyDbs {
         	imdbDataDb = new Database(imdbdatadb,
                                     null,
                                     myDbConfig);
-        	/*
-            vendordb = databasesHome + "/" + vendordb;
-            vendorDb = new Database(vendordb,
-                                    null,
-                                    myDbConfig);
-
-            inventorydb = databasesHome + "/" + inventorydb;
-            inventoryDb = new Database(inventorydb,
-                                        null,
-                                        myDbConfig);
-        	 */
         	
-            // Open the class catalog db. This is used to
-            // optimize class serialization.
-            classcatalogdb = databasesHome + "/" + classcatalogdb;
-            classCatalogDb = new Database(classcatalogdb,
-                                          null,
-                                          myDbConfig);
+        	
+            
         } catch(FileNotFoundException fnfe) {
             System.err.println("MyDbs: " + fnfe.toString());
             System.exit(-1);
         }
 
-        // Create our class catalog
-        classCatalog = new StoredClassCatalog(classCatalogDb);
-
-        // Need a tuple binding for the Inventory class.
-        // We use the InventoryBinding class
-        // that we implemented for this purpose.
-        //TupleBinding inventoryBinding = new InventoryBinding();
+        
         TupleBinding imdbBinding = new ImdbDataTupleBinding();
         // Open the secondary database. We use this to create a
         // secondary index for the inventory database
@@ -110,27 +93,28 @@ public class MyDbs {
         ItemNameKeyCreator keyCreator =
             new ItemNameKeyCreator(new ImdbDataTupleBinding());
 
+        ItemSizeKeyCreator keyCreatorSize = 
+        	new ItemSizeKeyCreator(new ImdbDataTupleBinding());
+        
         //ItemNameKeyCreator keyCreator =
         //    new ItemNameKeyCreator(new InventoryBinding());
 
-
-        // Set up additional secondary properties
-        // Need to allow duplicates for our secondary database
-        mySecConfig.setSortedDuplicates(true);
-        mySecConfig.setAllowPopulate(true); // Allow autopopulate
-        mySecConfig.setKeyCreator(keyCreator);
+        
+        mySecConfigSize.setSortedDuplicates(true);
+        mySecConfigSize.setAllowPopulate(true); // Allow autopopulate
+        mySecConfigSize.setKeyCreator(keyCreatorSize);
 
         // Now open it
         try {
-            itemnameindexdb = databasesHome + "/" + itemnameindexdb;
+            itemsizeindexdb = databasesHome + "/" + itemsizeindexdb;
             //itemNameIndexDb = new SecondaryDatabase(itemnameindexdb,
             //                                        null,
             //                                        inventoryDb,
             //                                        mySecConfig);
-            itemNameIndexDb = new SecondaryDatabase(itemnameindexdb,
+            itemSizeIndexDb = new SecondaryDatabase(itemsizeindexdb,
                                                     null,
                                                     imdbDataDb,
-                                                    mySecConfig);
+                                                    mySecConfigSize);            
             
         } catch(FileNotFoundException fnfe) {
             System.err.println("MyDbs: " + fnfe.toString());
@@ -139,46 +123,25 @@ public class MyDbs {
     }
 
    // getter methods
-    /*
-    public Database getVendorDB() {
-        return vendorDb;
-    }
 
-    public Database getInventoryDB() {
-        return inventoryDb;
-    }
-     */
     public Database getImdbDataDB() {
         return imdbDataDb;
     }
-    public SecondaryDatabase getNameIndexDB() {
-        return itemNameIndexDb;
-    }
 
-    public StoredClassCatalog getClassCatalog() {
-        return classCatalog;
+    public SecondaryDatabase getSizeIndexDB() {
+        return itemSizeIndexDb;
     }
 
     // Close the databases
     public void close() {
         try {
-            if (itemNameIndexDb != null) {
-                itemNameIndexDb.close();
-            }
-/*
-            if (vendorDb != null) {
-                vendorDb.close();
+
+            if (itemSizeIndexDb != null) {
+                itemSizeIndexDb.close();
             }
 
-            if (inventoryDb != null) {
-                inventoryDb.close();
-            }
-*/
             if (imdbDataDb != null) {
             	imdbDataDb.close();
-            }
-            if (classCatalogDb != null) {
-                classCatalogDb.close();
             }
 
         } catch(DatabaseException dbe) {
